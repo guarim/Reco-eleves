@@ -1,15 +1,18 @@
+const int RELAY_PIN = 3;
+
 void setup() {
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, LOW);
   Serial.begin(9600);
-  pinMode(13, OUTPUT); // Pin du relais
 }
 
 void loop() {
   if (Serial.available()) {
-    String cmd = Serial.readStringUntil('\n');
-    if (cmd == "ON") {
-      digitalWrite(13, HIGH);
-    } else if (cmd == "OFF") {
-      digitalWrite(13, LOW);
+    char c = Serial.read();
+    if (c == '1') {
+      digitalWrite(RELAY_PIN, HIGH); // relais ON
+    } else if (c == '0') {
+      digitalWrite(RELAY_PIN, LOW);  // relais OFF
     }
   }
 }
