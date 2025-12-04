@@ -1,503 +1,396 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Système de Reconnaissance Faciale</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Reconnaissance faciale - Entrée élèves</title>
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-            min-height: 100vh;
-            padding: 2rem;
-            color: #fff;
-        }
+<!-- Google font pour rendu pro -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+<style>
+  :root{
+    --bg:#f5f7fa;
+    --card:#ffffff;
+    --muted:#6b7280;
+    --accent:#0ea5a4;
+    --good:#16a34a;
+    --bad:#dc2626;
+    --shadow: 0 6px 18px rgba(22,24,27,0.06);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:#111827;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    min-height:100vh;
+    padding:32px;
+  }
+  .container{
+    width:1100px;
+    background:transparent;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: 640px 1fr;
+    gap:24px;
+  }
+  .card{
+    background:var(--card);
+    border-radius:12px;
+    padding:14px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .camera-wrap{
+    width:640px;
+    height:480px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#0f172a;
+    border-radius:8px;
+    position:relative;
+  }
+  canvas, video{
+    border-radius:6px;
+    width:640px;
+    height:480px;
+    object-fit:cover;
+    background:transparent;
+  }
+  .right{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  h2{margin:0 0 6px 0; font-size:16px;}
+  .info{
+    padding:18px;
+    border-radius:8px;
+    background:#fafafa;
+    min-height:180px;
+  }
+  .field{color:var(--muted); font-size:14px; margin-bottom:8px;}
+  .value{font-weight:600; font-size:15px; color:#111827;}
 
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
+  .message{
+    margin-top:18px;
+    padding:18px;
+    border-radius:8px;
+    text-align:center;
+    font-weight:700;
+    font-size:16px;
+  }
+  .message.good{ background: #ecfdf5; color:var(--good); border:1px solid rgba(22,163,74,0.12);}
+  .message.bad{ background: #fff1f2; color:var(--bad); border:1px solid rgba(220,38,38,0.08); }
 
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-        }
+  .controls{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-top:8px;
+  }
+  button{
+    border:0;
+    padding:10px 14px;
+    border-radius:8px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  button.primary{ background:var(--accent); color:white; }
+  button.grey{ background:#eef2f7; color:#111827; }
+  small{ color:var(--muted); display:block; margin-top:6px; }
 
-        .header p {
-            color: #94a3b8;
-            font-size: 1.1rem;
-        }
+  .student-photo{
+    width:120px;
+    height:120px;
+    border-radius:8px;
+    object-fit:cover;
+    background:#eee;
+    margin-bottom:8px;
+  }
 
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .card {
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(10px);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            border: 1px solid rgba(71, 85, 105, 0.5);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-        }
-
-        .card-header h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        .icon {
-            width: 24px;
-            height: 24px;
-            color: #60a5fa;
-        }
-
-        .video-container {
-            background: #000;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            margin-bottom: 1rem;
-            position: relative;
-        }
-
-        video {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        canvas {
-            display: none;
-        }
-
-        .analyze-btn {
-            width: 100%;
-            padding: 1rem;
-            font-size: 1rem;
-            font-weight: 600;
-            color: #fff;
-            background: #2563eb;
-            border: none;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
-        }
-
-        .analyze-btn:hover:not(:disabled) {
-            background: #1d4ed8;
-            transform: scale(1.02);
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.5);
-        }
-
-        .analyze-btn:active:not(:disabled) {
-            transform: scale(0.98);
-        }
-
-        .analyze-btn:disabled {
-            background: #475569;
-            cursor: not-allowed;
-        }
-
-        .info-content {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .info-item {
-            background: rgba(15, 23, 42, 0.5);
-            border-radius: 0.5rem;
-            padding: 1rem;
-            border: 1px solid #334155;
-        }
-
-        .info-label {
-            font-size: 0.875rem;
-            color: #94a3b8;
-            margin-bottom: 0.25rem;
-        }
-
-        .info-value {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #fff;
-        }
-
-        .info-value.large {
-            font-size: 1.5rem;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 400px;
-            text-align: center;
-        }
-
-        .empty-icon {
-            width: 96px;
-            height: 96px;
-            background: rgba(71, 85, 105, 0.5);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1rem;
-        }
-
-        .empty-icon svg {
-            width: 48px;
-            height: 48px;
-            color: #64748b;
-        }
-
-        .empty-state p {
-            color: #94a3b8;
-            font-size: 1.125rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .empty-state small {
-            color: #64748b;
-        }
-
-        .status-message {
-            border-radius: 1rem;
-            padding: 2rem;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .status-message.authorized {
-            background: rgba(34, 197, 94, 0.2);
-            border: 2px solid #22c55e;
-            box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.5);
-        }
-
-        .status-message.unauthorized {
-            background: rgba(239, 68, 68, 0.2);
-            border: 2px solid #ef4444;
-            box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.5);
-        }
-
-        .status-message.processing {
-            background: rgba(59, 130, 246, 0.2);
-            border: 2px solid #3b82f6;
-        }
-
-        .status-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-        }
-
-        .status-icon {
-            width: 48px;
-            height: 48px;
-        }
-
-        .status-text {
-            font-size: 2rem;
-            font-weight: 700;
-        }
-
-        .status-text.authorized {
-            color: #4ade80;
-        }
-
-        .status-text.unauthorized {
-            color: #f87171;
-        }
-
-        .status-text.processing {
-            color: #60a5fa;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        @media (max-width: 1024px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+  footer.note{ margin-top:14px; color:var(--muted); font-size:13px; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Système de Contrôle d'Accès</h1>
-            <p>Reconnaissance Faciale Sécurisée</p>
+  <div class="container">
+    <div class="grid">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div>
+            <h2>Caméra</h2>
+            <small>Format caméra : 640 × 480</small>
+          </div>
+          <div>
+            <button id="connect-serial" class="primary">Connecter Arduino</button>
+          </div>
         </div>
 
-        <div class="main-grid">
-            <!-- Zone caméra -->
-            <div class="card">
-                <div class="card-header">
-                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    <h2>Caméra en Direct</h2>
-                </div>
-                <div class="video-container">
-                    <video id="video" autoplay playsinline></video>
-                    <canvas id="canvas"></canvas>
-                </div>
-                <button id="analyzeBtn" class="analyze-btn">Analyser le Visage</button>
-            </div>
-
-            <!-- Zone informations -->
-            <div class="card">
-                <div class="card-header">
-                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <h2>Informations</h2>
-                </div>
-                <div id="infoContent">
-                    <div class="empty-state">
-                        <div class="empty-icon">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                            </svg>
-                        </div>
-                        <p>En attente de reconnaissance</p>
-                        <small>Cliquez sur "Analyser le Visage"</small>
-                    </div>
-                </div>
-            </div>
+        <div class="camera-wrap" id="camera-wrap">
+          <!-- video invisible (but needed for webcam) -->
+          <video id="video" autoplay muted playsinline style="display:none;"></video>
+          <!-- canvas used to show camera -->
+          <canvas id="cameraCanvas" width="640" height="480"></canvas>
         </div>
 
-        <!-- Message de statut -->
-        <div id="statusMessage" class="hidden"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+          <div class="controls">
+            <button id="startBtn" class="primary">Démarrer reconnaissance</button>
+            <button id="stopBtn" class="grey">Arrêter</button>
+            <small id="statusText">Modèle non chargé</small>
+          </div>
+          <div style="text-align:right">
+            <small>Seuil reconnaissance :</small>
+            <div style="font-weight:700">distance max: <span id="thresholdVal">0.5</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card right">
+        <h2>Informations élève</h2>
+        <div class="info" id="infoPanel">
+          <img id="studentPhoto" class="student-photo" alt="photo élève" src="">
+          <div class="field">ID : <span class="value" id="s-id">—</span></div>
+          <div class="field">Nom : <span class="value" id="s-name">—</span></div>
+          <div class="field">Classe : <span class="value" id="s-class">—</span></div>
+          <div class="field">Email : <span class="value" id="s-email">—</span></div>
+          <div class="field">Autre : <span class="value" id="s-other">—</span></div>
+        </div>
+
+        <div id="messageArea" class="message" style="display:none;">Message</div>
+
+        <div style="margin-top:8px">
+          <small>Notes :</small>
+          <ul style="margin:6px 0 0 18px; color:var(--muted)">
+            <li>Lancer la détection puis approcher le visage devant la webcam.</li>
+            <li>Connecter l'Arduino via le bouton "Connecter Arduino" (autorisation requise).</li>
+            <li>Les images doivent être dans <code>assets/</code> et nommées comme l'ID CSV (ex. <code>1.png</code>).</li>
+          </ul>
+        </div>
+
+        <footer class="note">Modèles face-api à placer dans <code>/models/</code>. Voir README.</footer>
+      </div>
     </div>
+  </div>
 
-    <script>
-        let students = [];
-        let isProcessing = false;
-        let stream = null;
+<!-- Librairies -->
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        const infoContent = document.getElementById('infoContent');
-        const statusMessage = document.getElementById('statusMessage');
+<script>
+/*
+  Flow :
+  - Charger modèles face-api
+  - Charger CSV via fetch -> map id => info
+  - Pour chaque élève, charger image assets/{id}.png et calculer descriptor
+  - Créer FaceMatcher
+  - Démarrer caméra, boucle de detection
+  - Si correspondance < threshold -> afficher infos + message AUTORISE + envoi commande Arduino via Web Serial
+  - Sinon -> message refusé
+*/
 
-        // Charger les données CSV
-        async function loadStudentData() {
-            try {
-                const response = await fetch('./personnel.csv');
-                const text = await response.text();
-                const lines = text.split('\n').filter(line => line.trim());
-                
-                students = lines.slice(1).map(line => {
-                    const values = line.split(',').map(v => v.trim());
-                    return {
-                        id: values[0],
-                        nom: values[1],
-                        prenom: values[2],
-                        classe: values[3],
-                        email: values[4],
-                        telephone: values[5]
-                    };
-                });
-                
-                console.log('Données chargées:', students.length, 'étudiants');
-            } catch (error) {
-                console.error('Erreur chargement CSV:', error);
-                showStatus('error', 'Erreur de chargement des données');
-            }
+const MODELS_URL = './models'; // must exist and contain face-api models
+const CSV_URL = './students.csv';
+const ASSETS_DIR = './assets';
+
+const video = document.getElementById('video');
+const cameraCanvas = document.getElementById('cameraCanvas');
+const ctx = cameraCanvas.getContext('2d');
+
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+const statusText = document.getElementById('statusText');
+
+const msgArea = document.getElementById('messageArea');
+const thresholdValElem = document.getElementById('thresholdVal');
+
+const connectSerialBtn = document.getElementById('connect-serial');
+
+let labeledDescriptors = [];
+let faceMatcher = null;
+let detectionInterval = null;
+let stream = null;
+let studentsMap = new Map();
+let serialPort = null;
+let serialWriter = null;
+let lastAuthorizeTime = 0;
+const AUTHORIZE_COOLDOWN_MS = 4000; // éviter envois répétitifs
+let MATCH_THRESHOLD = 0.5; // distance threshold — ajustable
+
+thresholdValElem.textContent = MATCH_THRESHOLD.toFixed(2);
+
+/* ---------- Arduino via WebSerial ---------- */
+async function connectSerial(){
+  if(!('serial' in navigator)){
+    alert('Web Serial API non disponible dans ce navigateur. Utilisez Chrome/Edge sur desktop.');
+    return;
+  }
+  try {
+    serialPort = await navigator.serial.requestPort();
+    await serialPort.open({ baudRate: 115200 });
+    serialWriter = serialPort.writable.getWriter();
+    connectSerialBtn.textContent = 'Arduino connecté';
+    connectSerialBtn.disabled = true;
+
+    // lecture asynchrone simple (optional)
+    const reader = serialPort.readable.getReader();
+    (async () => {
+      try {
+        while(true){
+          const { value, done } = await reader.read();
+          if(done) break;
+          // console.log('Arduino ->', new TextDecoder().decode(value));
         }
+      } catch(e){}
+      reader.releaseLock();
+    })();
 
-        // Démarrer la caméra
-        async function startCamera() {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: 640, height: 480 }
-                });
-                video.srcObject = stream;
-            } catch (error) {
-                console.error('Erreur caméra:', error);
-                showStatus('error', 'Impossible d\'accéder à la caméra');
-            }
-        }
+  } catch (err){
+    console.error('Erreur connexion série', err);
+    alert('Connexion série annulée ou erreur : ' + err.message);
+  }
+}
 
-        // Capturer et reconnaître
-        async function captureAndRecognize() {
-            if (isProcessing) return;
-            
-            isProcessing = true;
-            analyzeBtn.disabled = true;
-            analyzeBtn.textContent = 'Analyse en cours...';
-            
-            showStatus('processing', 'Analyse en cours...');
+async function sendSerialCommand(cmd){
+  if(!serialWriter){
+    console.warn('Serial non connecté — impossible d\'envoyer la commande.');
+    return;
+  }
+  try {
+    const data = new TextEncoder().encode(cmd + '\\n');
+    await serialWriter.write(data);
+  } catch (err){
+    console.error('Erreur écriture série', err);
+  }
+}
 
-            const context = canvas.getContext('2d');
-            canvas.width = 640;
-            canvas.height = 480;
-            context.drawImage(video, 0, 0, 640, 480);
+connectSerialBtn.addEventListener('click', connectSerial);
 
-            // Simulation de reconnaissance (2 secondes)
-            await new Promise(resolve => setTimeout(resolve, 1500));
+/* ---------- UI helpers ---------- */
+function showStudent(info){
+  document.getElementById('s-id').textContent = info.id || '—';
+  document.getElementById('s-name').textContent = info.name || '—';
+  document.getElementById('s-class').textContent = info.class || '—';
+  document.getElementById('s-email').textContent = info.email || '—';
+  document.getElementById('s-other').textContent = info.other || '—';
+  document.getElementById('studentPhoto').src = `${ASSETS_DIR}/${info.id}.png`;
+}
 
-            // Simulation: reconnaissance aléatoire
-            const recognized = Math.random() > 0.3;
-            
-            if (recognized && students.length > 0) {
-                const randomStudent = students[Math.floor(Math.random() * students.length)];
-                displayStudentInfo(randomStudent);
-                showStatus('authorized', 'AUTORISÉ');
-                
-                // Activer le relais Arduino
-                sendArduinoSignal(true);
-                setTimeout(() => sendArduinoSignal(false), 3000);
-            } else {
-                displayEmptyState();
-                showStatus('unauthorized', 'VOUS N\'AVEZ PAS L\'HABILITATION SUFFISANTE');
-            }
+function clearStudent(){
+  document.getElementById('s-id').textContent = '—';
+  document.getElementById('s-name').textContent = '—';
+  document.getElementById('s-class').textContent = '—';
+  document.getElementById('s-email').textContent = '—';
+  document.getElementById('s-other').textContent = '—';
+  document.getElementById('studentPhoto').src = '';
+}
 
-            isProcessing = false;
-            analyzeBtn.disabled = false;
-            analyzeBtn.textContent = 'Analyser le Visage';
-        }
+function showMessage(text, ok){
+  msgArea.style.display = 'block';
+  msgArea.className = ok ? 'message good' : 'message bad';
+  msgArea.textContent = text;
+}
 
-        // Afficher les informations de l'élève
-        function displayStudentInfo(student) {
-            infoContent.innerHTML = `
-                <div class="info-item">
-                    <div class="info-label">ID Élève</div>
-                    <div class="info-value large">${student.id}</div>
-                </div>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">Nom</div>
-                        <div class="info-value">${student.nom}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">NE(E) le:</div>
-                        <div class="info-value">${student.prenom}</div>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Statut</div>
-                    <div class="info-value">${student.classe}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Email</div>
-                    <div class="info-value">${student.email}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Téléphone</div>
-                    <div class="info-value">${student.telephone}</div>
-                </div>
-            `;
-        }
+/* ---------- CSV load ---------- */
+/*
+CSV expected format (header optional). Example:
+id,name,class,email,other
+1,Paul Dupont,3A,paul@example.com,Notes...
+2,Marie Durand,2B,marie@ex.com,Notes...
+*/
+async function loadCSV(){
+  statusText.textContent = 'Chargement CSV...';
+  const res = await fetch(CSV_URL + '?cache=' + Date.now());
+  if(!res.ok) throw new Error('Impossible de charger students.csv');
+  const text = await res.text();
+  const parsed = Papa.parse(text, { header:true, skipEmptyLines:true });
+  parsed.data.forEach(row => {
+    const id = String(row.id).trim();
+    if(!id) return;
+    studentsMap.set(id, {
+      id,
+      name: row.name || '',
+      class: row.class || '',
+      email: row.email || '',
+      other: row.other || ''
+    });
+  });
+  statusText.textContent = `CSV chargé (${studentsMap.size} élèves)`;
+}
 
-        // Afficher l'état vide
-        function displayEmptyState() {
-            infoContent.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                        </svg>
-                    </div>
-                    <p>En attente de reconnaissance</p>
-                    <small>Cliquez sur "Analyser le Visage"</small>
-                </div>
-            `;
-        }
+/* ---------- Build labeled descriptors ---------- */
+async function buildLabeledDescriptors(){
+  statusText.textContent = 'Calcul des descriptors à partir des photos...';
+  const descriptions = [];
+  for(const [id, info] of studentsMap.entries()){
+    const imgUrl = `${ASSETS_DIR}/${id}.png`;
+    try {
+      const img = await faceapi.fetchImage(imgUrl);
+      // detect single face and compute descriptor
+      const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+      if(!detection){
+        console.warn(`Aucun visage détecté dans ${imgUrl} — ignorer.`);
+        continue;
+      }
+      descriptions.push(new faceapi.LabeledFaceDescriptors(id, [detection.descriptor]));
+      statusText.textContent = `Descriptor: ${id} (${descriptions.length}/${studentsMap.size})`;
+    } catch (err){
+      console.warn('Erreur chargement image', imgUrl, err);
+    }
+  }
+  labeledDescriptors = descriptions;
+  if(labeledDescriptors.length === 0) statusText.textContent = 'Aucun descriptor trouvé ! Vérifier assets/';
+  else statusText.textContent = `Descriptors prêts (${labeledDescriptors.length})`;
+}
 
-        // Afficher le statut
-        function showStatus(type, message) {
-            const icons = {
-                authorized: '<svg class="status-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
-                unauthorized: '<svg class="status-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
-                processing: '<svg class="status-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
-            };
+/* ---------- Models load ---------- */
+async function loadModels(){
+  statusText.textContent = 'Chargement modèles...';
+  // tiny face detector + face landmark + recognition
+  await faceapi.nets.tinyFaceDetector.loadFromUri(MODELS_URL);
+  await faceapi.nets.faceLandmark68Net.loadFromUri(MODELS_URL);
+  await faceapi.nets.faceRecognitionNet.loadFromUri(MODELS_URL);
+  statusText.textContent = 'Modèles chargés';
+}
 
-            statusMessage.className = `status-message ${type}`;
-            statusMessage.innerHTML = `
-                <div class="status-content">
-                    ${icons[type] || ''}
-                    <p class="status-text ${type}">${message}</p>
-                </div>
-            `;
-            statusMessage.classList.remove('hidden');
-        }
+/* ---------- Camera start/stop ---------- */
+async function startCamera(){
+  stream = await navigator.mediaDevices.getUserMedia({ video: { width:640, height:480 }, audio:false });
+  video.srcObject = stream;
+  await video.play();
+}
 
-        // Communication Arduino
-        async function sendArduinoSignal(activate) {
-            try {
-                console.log(`Signal Arduino broche 3: ${activate ? 'HIGH' : 'LOW'}`);
-                
-                // Pour communication réelle avec Arduino (Web Serial API)
-                // Décommenter et adapter ce code:
-                /*
-                if (!window.port) {
-                    window.port = await navigator.serial.requestPort();
-                    await window.port.open({ baudRate: 9600 });
-                }
-                const writer = window.port.writable.getWriter();
-                await writer.write(new Uint8Array([activate ? 1 : 0]));
-                writer.releaseLock();
-                */
-            } catch (error) {
-                console.error('Erreur Arduino:', error);
-            }
-        }
+async function stopCamera(){
+  if(stream){
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  video.pause();
+  ctx.clearRect(0,0,cameraCanvas.width,cameraCanvas.height);
+}
 
-        // Event listeners
-        analyzeBtn.addEventListener('click', captureAndRecognize);
+/* ---------- Recognition loop ---------- */
+async function startRecognition(){
+  startBtn.disabled = true;
+  stopBtn.disabled = false;
+  statusText.textContent = 'Démarrage caméra...';
+  await startCamera();
 
-        // Initialisation
-        loadStudentData();
-        startCamera();
+  // Build FaceMatcher
+  faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, MATCH_THRESHOLD);
 
-        // Nettoyage à la fermeture
-        window.addEventListener('beforeunload', () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-        });
-    </script>
-</body>
-</html>
+  statusText.textContent = 'Reconnaissance active';
+  const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+
+  detectionInterval = setInterval(async () => {
+    if(video.readyState < 2) return;
+    // draw video to canvas
+    ctx.drawImage(video, 0, 0, cameraCanvas.width, cameraCanvas.height);
+
+    // do detection on current frame
+    const detections = await faceapi.detectSingleFace(video, options).withFaceLandmar
