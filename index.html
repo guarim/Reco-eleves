@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Reconnaissance faciale - Entrée élèves</title>
+<title>Reconnaissance faciale - Accès élèves</title>
 
-<!-- Google font pour rendu pro -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <style>
@@ -31,7 +30,6 @@
   }
   .container{
     width:1100px;
-    background:transparent;
   }
   .grid{
     display:grid;
@@ -43,24 +41,26 @@
     border-radius:12px;
     padding:14px;
     box-shadow:var(--shadow);
-    overflow:hidden;
   }
   .camera-wrap{
     width:640px;
     height:480px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:#0f172a;
     border-radius:8px;
+    background:#0f172a;
     position:relative;
   }
-  canvas, video{
-    border-radius:6px;
+  canvas{
     width:640px;
     height:480px;
-    object-fit:cover;
-    background:transparent;
+    border-radius:8px;
+    background:black;
+  }
+  video{
+    position:absolute;
+    opacity:0;
+    width:1px;
+    height:1px;
+    pointer-events:none;
   }
   .right{
     display:flex;
@@ -76,7 +76,6 @@
   }
   .field{color:var(--muted); font-size:14px; margin-bottom:8px;}
   .value{font-weight:600; font-size:15px; color:#111827;}
-
   .message{
     margin-top:18px;
     padding:18px;
@@ -84,16 +83,11 @@
     text-align:center;
     font-weight:700;
     font-size:16px;
+    display:none;
   }
-  .message.good{ background: #ecfdf5; color:var(--good); border:1px solid rgba(22,163,74,0.12);}
-  .message.bad{ background: #fff1f2; color:var(--bad); border:1px solid rgba(220,38,38,0.08); }
-
-  .controls{
-    display:flex;
-    gap:10px;
-    align-items:center;
-    margin-top:8px;
-  }
+  .message.good{ background:#ecfdf5; color:var(--good); border:1px solid rgba(22,163,74,0.12);}
+  .message.bad{ background:#fff1f2; color:var(--bad); border:1px solid rgba(220,38,38,0.08);}
+  .controls{ display:flex; gap:10px; align-items:center; margin-top:8px;}
   button{
     border:0;
     padding:10px 14px;
@@ -104,7 +98,6 @@
   button.primary{ background:var(--accent); color:white; }
   button.grey{ background:#eef2f7; color:#111827; }
   small{ color:var(--muted); display:block; margin-top:6px; }
-
   .student-photo{
     width:120px;
     height:120px;
@@ -113,284 +106,262 @@
     background:#eee;
     margin-bottom:8px;
   }
-
-  footer.note{ margin-top:14px; color:var(--muted); font-size:13px; }
 </style>
 </head>
+
 <body>
-  <div class="container">
-    <div class="grid">
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div>
-            <h2>Caméra</h2>
-            <small>Format caméra : 640 × 480</small>
-          </div>
-          <div>
-            <button id="connect-serial" class="primary">Connecter Arduino</button>
-          </div>
-        </div>
+<div class="container">
+  <div class="grid">
 
-        <div class="camera-wrap" id="camera-wrap">
-          <!-- video invisible (but needed for webcam) -->
-          <video id="video" autoplay muted playsinline style="display:none;"></video>
-          <!-- canvas used to show camera -->
-          <canvas id="cameraCanvas" width="640" height="480"></canvas>
+    <!-- CAMERA -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <h2>Caméra</h2>
+          <small>Format 640×480</small>
         </div>
-
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
-          <div class="controls">
-            <button id="startBtn" class="primary">Démarrer reconnaissance</button>
-            <button id="stopBtn" class="grey">Arrêter</button>
-            <small id="statusText">Modèle non chargé</small>
-          </div>
-          <div style="text-align:right">
-            <small>Seuil reconnaissance :</small>
-            <div style="font-weight:700">distance max: <span id="thresholdVal">0.5</span></div>
-          </div>
-        </div>
+        <button id="serialButton" class="primary">Connecter Arduino</button>
       </div>
 
-      <div class="card right">
-        <h2>Informations élève</h2>
-        <div class="info" id="infoPanel">
-          <img id="studentPhoto" class="student-photo" alt="photo élève" src="">
-          <div class="field">ID : <span class="value" id="s-id">—</span></div>
-          <div class="field">Nom : <span class="value" id="s-name">—</span></div>
-          <div class="field">Classe : <span class="value" id="s-class">—</span></div>
-          <div class="field">Email : <span class="value" id="s-email">—</span></div>
-          <div class="field">Autre : <span class="value" id="s-other">—</span></div>
-        </div>
+      <div class="camera-wrap">
+        <canvas id="cameraCanvas" width="640" height="480"></canvas>
+        <video id="video" autoplay muted playsinline></video>
+      </div>
 
-        <div id="messageArea" class="message" style="display:none;">Message</div>
-
-        <div style="margin-top:8px">
-          <small>Notes :</small>
-          <ul style="margin:6px 0 0 18px; color:var(--muted)">
-            <li>Lancer la détection puis approcher le visage devant la webcam.</li>
-            <li>Connecter l'Arduino via le bouton "Connecter Arduino" (autorisation requise).</li>
-            <li>Les images doivent être dans <code>assets/</code> et nommées comme l'ID CSV (ex. <code>1.png</code>).</li>
-          </ul>
-        </div>
-
-        <footer class="note">Modèles face-api à placer dans <code>/models/</code>. Voir README.</footer>
+      <div class="controls">
+        <button id="startBtn" class="primary">Démarrer reconnaissance</button>
+        <button id="stopBtn" class="grey" disabled>Arrêter</button>
+        <small id="statusText">Initialisation...</small>
       </div>
     </div>
-  </div>
 
-<!-- Librairies -->
+    <!-- INFO -->
+    <div class="card right">
+      <h2>Informations élève</h2>
+
+      <div class="info">
+        <img id="studentPhoto" class="student-photo" src="">
+        <div class="field">ID : <span class="value" id="s-id">—</span></div>
+        <div class="field">Nom : <span class="value" id="s-name">—</span></div>
+        <div class="field">Classe : <span class="value" id="s-class">—</span></div>
+        <div class="field">Email : <span class="value" id="s-email">—</span></div>
+        <div class="field">Autre : <span class="value" id="s-other">—</span></div>
+      </div>
+
+      <div id="messageArea" class="message"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- LIBS -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <script>
-/*
-  Flow :
-  - Charger modèles face-api
-  - Charger CSV via fetch -> map id => info
-  - Pour chaque élève, charger image assets/{id}.png et calculer descriptor
-  - Créer FaceMatcher
-  - Démarrer caméra, boucle de detection
-  - Si correspondance < threshold -> afficher infos + message AUTORISE + envoi commande Arduino via Web Serial
-  - Sinon -> message refusé
-*/
+const MODELS_URL = "./models";
+const CSV_URL = "./students.csv";
+const ASSETS_DIR = "./assets";
 
-const MODELS_URL = './models'; // must exist and contain face-api models
-const CSV_URL = './students.csv';
-const ASSETS_DIR = './assets';
+const video = document.getElementById("video");
+const canvas = document.getElementById("cameraCanvas");
+const ctx = canvas.getContext("2d");
 
-const video = document.getElementById('video');
-const cameraCanvas = document.getElementById('cameraCanvas');
-const ctx = cameraCanvas.getContext('2d');
+const startBtn = document.getElementById("startBtn");
+const stopBtn = document.getElementById("stopBtn");
+const statusText = document.getElementById("statusText");
+const messageArea = document.getElementById("messageArea");
+const serialButton = document.getElementById("serialButton");
 
-const startBtn = document.getElementById('startBtn');
-const stopBtn = document.getElementById('stopBtn');
-const statusText = document.getElementById('statusText');
-
-const msgArea = document.getElementById('messageArea');
-const thresholdValElem = document.getElementById('thresholdVal');
-
-const connectSerialBtn = document.getElementById('connect-serial');
-
+let students = new Map();
 let labeledDescriptors = [];
 let faceMatcher = null;
-let detectionInterval = null;
+
 let stream = null;
-let studentsMap = new Map();
+let detectionLoop = null;
+
 let serialPort = null;
 let serialWriter = null;
-let lastAuthorizeTime = 0;
-const AUTHORIZE_COOLDOWN_MS = 4000; // éviter envois répétitifs
-let MATCH_THRESHOLD = 0.5; // distance threshold — ajustable
 
-thresholdValElem.textContent = MATCH_THRESHOLD.toFixed(2);
+const MATCH_THRESHOLD = 0.5;
+let lastAuth = 0;
 
-/* ---------- Arduino via WebSerial ---------- */
-async function connectSerial(){
-  if(!('serial' in navigator)){
-    alert('Web Serial API non disponible dans ce navigateur. Utilisez Chrome/Edge sur desktop.');
-    return;
-  }
-  try {
-    serialPort = await navigator.serial.requestPort();
-    await serialPort.open({ baudRate: 115200 });
-    serialWriter = serialPort.writable.getWriter();
-    connectSerialBtn.textContent = 'Arduino connecté';
-    connectSerialBtn.disabled = true;
-
-    // lecture asynchrone simple (optional)
-    const reader = serialPort.readable.getReader();
-    (async () => {
-      try {
-        while(true){
-          const { value, done } = await reader.read();
-          if(done) break;
-          // console.log('Arduino ->', new TextDecoder().decode(value));
-        }
-      } catch(e){}
-      reader.releaseLock();
-    })();
-
-  } catch (err){
-    console.error('Erreur connexion série', err);
-    alert('Connexion série annulée ou erreur : ' + err.message);
-  }
+function showMsg(txt, ok){
+  messageArea.textContent = txt;
+  messageArea.className = ok ? "message good" : "message bad";
+  messageArea.style.display = "block";
 }
 
-async function sendSerialCommand(cmd){
-  if(!serialWriter){
-    console.warn('Serial non connecté — impossible d\'envoyer la commande.');
-    return;
-  }
-  try {
-    const data = new TextEncoder().encode(cmd + '\\n');
-    await serialWriter.write(data);
-  } catch (err){
-    console.error('Erreur écriture série', err);
-  }
-}
+function clearMsg(){ messageArea.style.display = "none"; }
 
-connectSerialBtn.addEventListener('click', connectSerial);
-
-/* ---------- UI helpers ---------- */
-function showStudent(info){
-  document.getElementById('s-id').textContent = info.id || '—';
-  document.getElementById('s-name').textContent = info.name || '—';
-  document.getElementById('s-class').textContent = info.class || '—';
-  document.getElementById('s-email').textContent = info.email || '—';
-  document.getElementById('s-other').textContent = info.other || '—';
-  document.getElementById('studentPhoto').src = `${ASSETS_DIR}/${info.id}.png`;
+function showStudent(s){
+  document.getElementById("s-id").textContent = s.id;
+  document.getElementById("s-name").textContent = s.name;
+  document.getElementById("s-class").textContent = s.class;
+  document.getElementById("s-email").textContent = s.email;
+  document.getElementById("s-other").textContent = s.other;
+  document.getElementById("studentPhoto").src = `${ASSETS_DIR}/${s.id}.png`;
 }
 
 function clearStudent(){
-  document.getElementById('s-id').textContent = '—';
-  document.getElementById('s-name').textContent = '—';
-  document.getElementById('s-class').textContent = '—';
-  document.getElementById('s-email').textContent = '—';
-  document.getElementById('s-other').textContent = '—';
-  document.getElementById('studentPhoto').src = '';
-}
-
-function showMessage(text, ok){
-  msgArea.style.display = 'block';
-  msgArea.className = ok ? 'message good' : 'message bad';
-  msgArea.textContent = text;
-}
-
-/* ---------- CSV load ---------- */
-/*
-CSV expected format (header optional). Example:
-id,name,class,email,other
-1,Paul Dupont,3A,paul@example.com,Notes...
-2,Marie Durand,2B,marie@ex.com,Notes...
-*/
-async function loadCSV(){
-  statusText.textContent = 'Chargement CSV...';
-  const res = await fetch(CSV_URL + '?cache=' + Date.now());
-  if(!res.ok) throw new Error('Impossible de charger students.csv');
-  const text = await res.text();
-  const parsed = Papa.parse(text, { header:true, skipEmptyLines:true });
-  parsed.data.forEach(row => {
-    const id = String(row.id).trim();
-    if(!id) return;
-    studentsMap.set(id, {
-      id,
-      name: row.name || '',
-      class: row.class || '',
-      email: row.email || '',
-      other: row.other || ''
-    });
+  ["s-id","s-name","s-class","s-email","s-other"].forEach(id=>{
+    document.getElementById(id).textContent = "—";
   });
-  statusText.textContent = `CSV chargé (${studentsMap.size} élèves)`;
+  document.getElementById("studentPhoto").src = "";
 }
 
-/* ---------- Build labeled descriptors ---------- */
-async function buildLabeledDescriptors(){
-  statusText.textContent = 'Calcul des descriptors à partir des photos...';
-  const descriptions = [];
-  for(const [id, info] of studentsMap.entries()){
-    const imgUrl = `${ASSETS_DIR}/${id}.png`;
-    try {
-      const img = await faceapi.fetchImage(imgUrl);
-      // detect single face and compute descriptor
-      const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
-      if(!detection){
-        console.warn(`Aucun visage détecté dans ${imgUrl} — ignorer.`);
-        continue;
-      }
-      descriptions.push(new faceapi.LabeledFaceDescriptors(id, [detection.descriptor]));
-      statusText.textContent = `Descriptor: ${id} (${descriptions.length}/${studentsMap.size})`;
-    } catch (err){
-      console.warn('Erreur chargement image', imgUrl, err);
-    }
+async function sendSerial(cmd){
+  if(!serialWriter) return;
+  await serialWriter.write(new TextEncoder().encode(cmd+"\n"));
+}
+
+async function connectSerial(){
+  if(!("serial" in navigator)){
+    alert("Web Serial non supporté (Chrome/Edge requis).");
+    return;
   }
-  labeledDescriptors = descriptions;
-  if(labeledDescriptors.length === 0) statusText.textContent = 'Aucun descriptor trouvé ! Vérifier assets/';
-  else statusText.textContent = `Descriptors prêts (${labeledDescriptors.length})`;
+  try{
+    serialPort = await navigator.serial.requestPort();
+    await serialPort.open({ baudRate:115200 });
+    serialWriter = serialPort.writable.getWriter();
+    serialButton.textContent = "Arduino connecté";
+    serialButton.disabled = true;
+  }catch(e){
+    alert("Erreur connexion Arduino : "+e.message);
+  }
 }
 
-/* ---------- Models load ---------- */
-async function loadModels(){
-  statusText.textContent = 'Chargement modèles...';
-  // tiny face detector + face landmark + recognition
-  await faceapi.nets.tinyFaceDetector.loadFromUri(MODELS_URL);
-  await faceapi.nets.faceLandmark68Net.loadFromUri(MODELS_URL);
-  await faceapi.nets.faceRecognitionNet.loadFromUri(MODELS_URL);
-  statusText.textContent = 'Modèles chargés';
-}
+serialButton.onclick = connectSerial;
 
-/* ---------- Camera start/stop ---------- */
 async function startCamera(){
-  stream = await navigator.mediaDevices.getUserMedia({ video: { width:640, height:480 }, audio:false });
-  video.srcObject = stream;
-  await video.play();
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { width:640, height:480, facingMode:"user" },
+      audio:false
+    });
+
+    video.srcObject = stream;
+
+    return new Promise(resolve=>{
+      video.onloadedmetadata = ()=>{
+        video.play().then(()=>{
+          statusText.textContent = "Caméra prête";
+          resolve();
+        });
+      };
+    });
+
+  }catch(e){
+    statusText.textContent = "Erreur caméra : "+e.message;
+    alert("Caméra indisponible ou refusée.");
+  }
 }
 
 async function stopCamera(){
   if(stream){
-    stream.getTracks().forEach(t => t.stop());
+    stream.getTracks().forEach(t=>t.stop());
     stream = null;
   }
-  video.pause();
-  ctx.clearRect(0,0,cameraCanvas.width,cameraCanvas.height);
 }
 
-/* ---------- Recognition loop ---------- */
+async function loadCSV(){
+  const r = await fetch(CSV_URL+"?nocache="+Date.now());
+  const txt = await r.text();
+  const parsed = Papa.parse(txt,{header:true,skipEmptyLines:true});
+  parsed.data.forEach(row=>{
+    const id = String(row.id).trim();
+    if(!id) return;
+    students.set(id,{id,name:row.name,class:row.class,email:row.email,other:row.other});
+  });
+}
+
+async function buildDescriptors(){
+  for(const [id, s] of students.entries()){
+    try{
+      const img = await faceapi.fetchImage(`${ASSETS_DIR}/${id}.png`);
+      const d = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+      if(d){
+        labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(id,[d.descriptor]));
+        statusText.textContent = `Descriptors : ${labeledDescriptors.length}`;
+      }
+    }catch(e){}
+  }
+}
+
 async function startRecognition(){
   startBtn.disabled = true;
   stopBtn.disabled = false;
-  statusText.textContent = 'Démarrage caméra...';
+
   await startCamera();
 
-  // Build FaceMatcher
   faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, MATCH_THRESHOLD);
 
-  statusText.textContent = 'Reconnaissance active';
-  const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+  detectionLoop = setInterval(async ()=>{
+    if(!stream) return;
 
-  detectionInterval = setInterval(async () => {
-    if(video.readyState < 2) return;
-    // draw video to canvas
-    ctx.drawImage(video, 0, 0, cameraCanvas.width, cameraCanvas.height);
+    ctx.drawImage(video, 0,0,640,480);
 
-    // do detection on current frame
-    const detections = await faceapi.detectSingleFace(video, options).withFaceLandmar
+    const det = await faceapi.detectSingleFace(video,new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks().withFaceDescriptor();
+
+    if(!det){
+      clearStudent();
+      showMsg("Aucun visage détecté",0);
+      return;
+    }
+
+    const match = faceMatcher.findBestMatch(det.descriptor);
+    if(match.label !== "unknown"){
+      const s = students.get(match.label);
+      showStudent(s);
+      showMsg("AUTORISÉ",1);
+
+      if(Date.now()-lastAuth > 3000){
+        lastAuth = Date.now();
+        sendSerial("OPEN:"+s.id);
+      }
+
+    }else{
+      clearStudent();
+      showMsg("VOUS N'AVEZ PAS L'HABILITATION",0);
+    }
+
+  }, 300);
+}
+
+function stopRecognition(){
+  clearInterval(detectionLoop);
+  detectionLoop = null;
+  stopCamera();
+
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+
+  clearStudent();
+  clearMsg();
+  ctx.clearRect(0,0,640,480);
+}
+
+
+startBtn.onclick = startRecognition;
+stopBtn.onclick = stopRecognition;
+
+async function init(){
+  statusText.textContent = "Chargement modèles...";
+  await faceapi.nets.tinyFaceDetector.loadFromUri(MODELS_URL);
+  await faceapi.nets.faceLandmark68Net.loadFromUri(MODELS_URL);
+  await faceapi.nets.faceRecognitionNet.loadFromUri(MODELS_URL);
+
+  statusText.textContent = "Chargement CSV...";
+  await loadCSV();
+
+  statusText.textContent = "Calcul descriptors...";
+  await buildDescriptors();
+
+  statusText.textContent = "Prêt.";
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
