@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Système de Reconnaissance Faciale</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/face-api.js/0.22.2/face-api.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        .main-content {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+        .video-section {
+            flex: 0 0 620px;
+        }
+        canvas {
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            display: block;
+            background: #000;
+        }
+        .info-section {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            min-height: 480px;
+            display: flex;
+            flex-direction: column;
+        }
+        .info-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .info-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .info-item {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .info-value {
+            color: #333;
+            font-size: 16px;
+        }
+        .unauthorized {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #dc3545;
+            padding: 40px;
+            background: #fff3cd;
+            border: 3px solid #dc3545;
+            border-radius: 10px;
+            margin: auto;
+        }
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status.ready {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .relay-status {
+            text-align: center;
+            padding: 10px;
+            margin-top: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .relay-on {
+            background: #d4edda;
+            color: #155724;
+        }
+        .relay-off {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Système de Reconnaissance Faciale</h1>
+        
+        <div class="status loading" id="status">
+            Chargement des modèles...
+        </div>
+
+        <div class="controls">
+            <button id="startBtn" disabled>Démarrer la Caméra</button>
+            <button id="stopBtn" disabled>Arrêter</button>
+            <input type="file" id="csvFile" accept=".csv" style="display:none">
+            <button id="loadCsvBtn">Charger CSV</button>
+        </div>
+
+        <div class="main-content">
+            <div class="video-section">
+                <canvas id="canvas" width="620" height="480"></canvas>
+            </div>
+            
+            <div class="info-section">
+                <div class="info-title">Informations Personnel</div>
+                <div class="info-content" id="infoContent">
+                    <div style="text-align: center; color: #999;">
+                        En attente de reconnaissance...
+                    </div>
+                </div>
+                <div class="relay-status relay-off" id="relayStatus">
+                    Relais: DÉSACTIVÉ
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const statusDiv = document.getElementById('status');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const loadCsvBtn = document.getElementById('loadCsvBtn');
+        const csvFileInput = document.getElementById('csvFile');
+        const infoContent = document.getElementById('infoContent');
+        const relayStatus = document.getElementById('relayStatus');
+
+        let video = null;
+        let stream = null;
+        let labeledDescriptors = [];
+        let personnelData = {};
+        let isRunning = false;
+        let faceMatcher = null;
+
+        // Charger les modèles Face-API
+        async function loadModels() {
+            try {
+                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
+                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+                
+                statusDiv.className = 'status ready';
+                statusDiv.textContent = '✓ Modèles chargés - Veuillez charger le fichier CSV';
+                startBtn.disabled = false;
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '✗ Erreur de chargement des modèles: ' + error.message;
+            }
+        }
+
+        // Charger le fichier CSV
+        loadCsvBtn.addEventListener('click', () => csvFileInput.click());
+        
+        csvFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                Papa.parse(file, {
+                    header: true,
+                    complete: (results) => {
+                        personnelData = {};
+                        results.data.forEach(row => {
+                            if (row.N) {
+                                personnelData[row.N.trim()] = {
+                                    nom: row.Nom || '',
+                                    prenom: row.Prénom || row.Prenom || '',
+                                    adresse: row.Adresse || '',
+                                    classe: row.Classe || '',
+                                    telephone: row.Téléphone || row.Telephone || '',
+                                    email: row['Adresse mail'] || row.Email || ''
+                                };
+                            }
+                        });
+                        statusDiv.className = 'status ready';
+                        statusDiv.textContent = `✓ CSV chargé: ${Object.keys(personnelData).length} personnes`;
+                        loadReferenceImages();
+                    },
+                    error: (error) => {
+                        statusDiv.className = 'status error';
+                        statusDiv.textContent = '✗ Erreur lecture CSV: ' + error.message;
+                    }
+                });
+            }
+        });
+
+        // Charger les images de référence
+        async function loadReferenceImages() {
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = 'Chargement des images de référence...';
+            
+            labeledDescriptors = [];
+            
+            for (let i = 1; i <= 20; i++) {
+                try {
+                    const img = await faceapi.fetchImage(`assets/${i}.png`);
+                    const detection = await faceapi
+                        .detectSingleFace(img)
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+                    
+                    if (detection) {
+                        labeledDescriptors.push(
+                            new faceapi.LabeledFaceDescriptors(
+                                String(i),
+                                [detection.descriptor]
+                            )
+                        );
+                    }
+                } catch (error) {
+                    console.log(`Image ${i}.png non trouvée ou erreur`);
+                }
+            }
+            
+            if (labeledDescriptors.length > 0) {
+                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+                statusDiv.className = 'status ready';
+                statusDiv.textContent = `✓ ${labeledDescriptors.length} visages de référence chargés`;
+            } else {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '✗ Aucune image de référence trouvée dans assets/';
+            }
+        }
+
+        // Démarrer la caméra
+        startBtn.addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 620, height: 480 } 
+                });
+                
+                video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+                
+                video.addEventListener('loadeddata', () => {
+                    isRunning = true;
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    detectFaces();
+                });
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '✗ Erreur accès caméra: ' + error.message;
+            }
+        });
+
+        // Arrêter la caméra
+        stopBtn.addEventListener('click', () => {
+            isRunning = false;
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            if (video) {
+                video.pause();
+                video = null;
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            displayInfo(null);
+            updateRelay(false);
+        });
+
+        // Détection des visages
+        async function detectFaces() {
+            if (!isRunning || !video) return;
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            if (faceMatcher) {
+                try {
+                    const detections = await faceapi
+                        .detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions())
+                        .withFaceLandmarks()
+                        .withFaceDescriptors();
+
+                    if (detections.length > 0) {
+                        const detection = detections[0];
+                        const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+                        
+                        // Dessiner le rectangle autour du visage
+                        const box = detection.detection.box;
+                        ctx.strokeStyle = bestMatch.label !== 'unknown' ? '#00ff00' : '#ff0000';
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(box.x, box.y, box.width, box.height);
+                        
+                        if (bestMatch.label !== 'unknown' && bestMatch.distance < 0.6) {
+                            displayInfo(bestMatch.label);
+                            updateRelay(true);
+                        } else {
+                            displayInfo(null);
+                            updateRelay(false);
+                        }
+                    } else {
+                        displayInfo(null);
+                        updateRelay(false);
+                    }
+                } catch (error) {
+                    console.error('Erreur détection:', error);
+                }
+            }
+
+            requestAnimationFrame(detectFaces);
+        }
+
+        // Afficher les informations
+        function displayInfo(personId) {
+            if (!personId || !personnelData[personId]) {
+                infoContent.innerHTML = '<div class="unauthorized">PERSONNEL NON AUTORISÉ</div>';
+                return;
+            }
+
+            const data = personnelData[personId];
+            infoContent.innerHTML = `
+                <div class="info-item">
+                    <div class="info-label">N° ID</div>
+                    <div class="info-value">${personId}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Nom</div>
+                    <div class="info-value">${data.nom}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Prénom</div>
+                    <div class="info-value">${data.prenom}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Adresse</div>
+                    <div class="info-value">${data.adresse}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Classe</div>
+                    <div class="info-value">${data.classe}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Téléphone</div>
+                    <div class="info-value">${data.telephone}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Email</div>
+                    <div class="info-value">${data.email}</div>
+                </div>
+            `;
+        }
+
+        // Mettre à jour le relais (Arduino)
+        function updateRelay(activate) {
+            if (activate) {
+                relayStatus.className = 'relay-status relay-on';
+                relayStatus.textContent = '✓ Relais: ACTIVÉ';
+                // Communication avec Arduino via Serial Web API (nécessite connexion USB)
+                sendToArduino('ON');
+            } else {
+                relayStatus.className = 'relay-status relay-off';
+                relayStatus.textContent = '✗ Relais: DÉSACTIVÉ';
+                sendToArduino('OFF');
+            }
+        }
+
+        // Envoyer commande à Arduino
+        async function sendToArduino(command) {
+            try {
+                // Cette partie nécessite l'API Web Serial (Chrome/Edge)
+                // Pour l'utiliser, vous devez d'abord connecter l'Arduino
+                if ('serial' in navigator) {
+                    // Le code de connexion Serial sera ajouté ici
+                    console.log('Commande Arduino:', command);
+                }
+            } catch (error) {
+                console.error('Erreur Arduino:', error);
+            }
+        }
+
+        // Initialisation
+        loadModels();
+    </script>
+</body>
+</html>
