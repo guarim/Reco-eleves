@@ -22,6 +22,29 @@ body {
 
 #left-pane {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#connect-camera {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: none;
+  background: #16a34a;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#connect-camera:hover {
+  background: #15803d;
+}
+
+
+#left-pane {
+  position: relative;
 }
 
 #video, #overlay {
