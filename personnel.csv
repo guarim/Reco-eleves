@@ -1,4 +1,4 @@
-nom, date de naissance, statut, N°tel, email
+id,nom,prenom,classe,email,telephone
 1,	BOURKOUA Vadim,	28/07/2011,	DEMI-PENSIONNAIRE, XXXXX, XXXX
 2,	BROUSSIER Kenzo,	25/04/2011,	DEMI-PENSIONNAIRE, XXXXX, XXXX
 3,	DACHICOURT Laony,	19/09/2011,	DEMI-PENSIONNAIRE, XXXXX, XXXX
@@ -19,6 +19,7 @@ nom, date de naissance, statut, N°tel, email
 18,	VALLOIS Noemie,	11/05/2011,	DEMI-PENSIONNAIRE, XXXXX, XXXX
 19,	VITSE Sofian,	20/10/2011,	DEMI-PENSIONNAIRE, XXXXX, XXXX
 20, GUARIM M, XX/XX/XXXX,  Professeur, 06 13 20 40 40, guarimm@gmail.com
+
 
 
 
