@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Contrôle d’accès élèves</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- face-api.js -->
+  <script defer src="https://unpkg.com/face-api.js"></script>
+  <!-- PapaParse -->
+  <script defer src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <script defer src="main.js"></script>
+</head>
+<body>
+  <div id="app">
+    <div id="left-pane">
+      <video id="video" autoplay muted width="640" height="480"></video>
+      <canvas id="overlay" width="640" height="480"></canvas>
+    </div>
+
+    <div id="right-pane">
+      <h2>Coordonnées élève</h2>
+      <div id="student-info">
+        <p><strong>ID :</strong> <span id="s-id">–</span></p>
+        <p><strong>Nom :</strong> <span id="s-name">–</span></p>
+        <p><strong>Prénom :</strong> <span id="s-firstname">–</span></p>
+        <p><strong>Classe :</strong> <span id="s-class">–</span></p>
+        <p><strong>Email :</strong> <span id="s-email">–</span></p>
+      </div>
+
+      <button id="connect-arduino">Connecter Arduino</button>
+    </div>
+  </div>
+
+  <div id="message"></div>
+</body>
+</html>
