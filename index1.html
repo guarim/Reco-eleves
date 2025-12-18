@@ -390,7 +390,7 @@
                         return new faceapi.LabeledFaceDescriptors(student.id, descriptions);
                     } else {
                         console.warn(`Aucun visage détecté pour ID ${student.id}`);
-                        return new faceapi.LabeledFaceDescriptors(student.id, []);
+                        return new faceapi.LabeledFaceDescriptors(student.nom, []);
                     }
                 } catch(err) {
                     console.warn(`Image introuvable pour ID ${student.id} (Normal si pas de dossier assets local):`, err);
