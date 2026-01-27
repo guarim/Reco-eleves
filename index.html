@@ -346,9 +346,9 @@
             try {
                 const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
                 
-                await faceapi.nets.ssd_mobilenetv1_model.loadFromUri(MODEL_URL), // Détection
-                await faceapi.nets.face_landmark_68_model.loadFromUri(MODEL_URL), // Points du visage
-                await faceapi.nets.face_recognition_model.loadFromUri(MODEL_URL) // Reconnaissance (Encodage)
+                await faceapi.nets.ssd_mobilenetv1_model.bin.loadFromUri(MODEL_URL), // Détection
+                await faceapi.nets.face_landmark_68_model.bin.loadFromUri(MODEL_URL), // Points du visage
+                await faceapi.nets.face_recognition_model.bin.loadFromUri(MODEL_URL) // Reconnaissance (Encodage)
                 
                 console.log('Modeles charges avec succes');
                 modelsLoaded = true;
