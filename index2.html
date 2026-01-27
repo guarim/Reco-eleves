@@ -147,7 +147,7 @@
         
         // CORRECTION : Utilisation d'un CDN public pour les modèles au lieu du dossier local '/models'
         // Cela permet à l'application de fonctionner sans serveur local configuré pour les modèles.
-        const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models'; 
+        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/'; 
 
         // Variables globales
         let video = document.getElementById('video');
@@ -195,9 +195,9 @@
 
         // --- 2. INITIALISATION FACE API ---
         Promise.all([
-            faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL), // Détection
-            faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL), // Points du visage
-            faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL) // Reconnaissance (Encodage)
+            faceapi.nets.ssd_mobilenetv1_model.loadFromUri(MODEL_URL), // Détection
+            faceapi.nets.face_landmark68_model.loadFromUri(MODEL_URL), // Points du visage
+            faceapi.nets.face_recognition_model.loadFromUri(MODEL_URL) // Reconnaissance (Encodage)
         ]).then(startApp).catch(err => {
             console.error(err);
             document.getElementById('loader').innerHTML = `<p class="text-red-500 text-center px-4">Erreur: Impossible de charger les modèles IA depuis le CDN.<br>Vérifiez votre connexion internet.</p>`;
