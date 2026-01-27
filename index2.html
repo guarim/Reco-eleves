@@ -196,7 +196,7 @@
         // --- 2. INITIALISATION FACE API ---
         Promise.all([
             faceapi.nets.ssd_mobilenetv1_model.loadFromUri(MODEL_URL), // Détection
-            faceapi.nets.face_landmark68_model.loadFromUri(MODEL_URL), // Points du visage
+            faceapi.nets.face_landmark_68_model.loadFromUri(MODEL_URL), // Points du visage
             faceapi.nets.face_recognition_model.loadFromUri(MODEL_URL) // Reconnaissance (Encodage)
         ]).then(startApp).catch(err => {
             console.error(err);
