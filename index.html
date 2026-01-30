@@ -341,12 +341,12 @@
         function loadModels() {
             var MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
             
-            return faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL)
+            return faceapi.nets.ssd_mobilenetv1_modelNet.loadFromUri(MODEL_URL)
                 .then(function() {
-                    return faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                    return faceapi.nets.face_landmark_68_modelNet.loadFromUri(MODEL_URL);
                 })
                 .then(function() {
-                    return faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                    return faceapi.nets.face_recognition_modelNet.loadFromUri(MODEL_URL);
                 })
                 .then(function() {
                     console.log('Modeles charges avec succes');
