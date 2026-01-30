@@ -1,98 +1,114 @@
+:root {
+    --bg-color: #1e1e2f;
+    --card-bg: #27293d;
+    --text-color: #ffffff;
+    --success: #00f2c3; /* Vert */
+    --danger: #fd5d93;  /* Rouge */
+    --neutral: #888;
+}
+
 body {
-  margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0f172a;
-  color: #e5e7eb;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
 }
 
-#app {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 32px;
-  padding: 32px;
-}
-
-#left-pane, #right-pane {
-  background: #020617;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-#left-pane {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-#connect-camera {
-  align-self: flex-start;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: none;
-  background: #16a34a;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-#connect-camera:hover {
-  background: #15803d;
-}
-
-
-#left-pane {
-  position: relative;
-}
-
-#video, #overlay {
-  border-radius: 8px;
-  border: 1px solid #1f2937;
-}
-
-#overlay {
-  position: absolute;
-  left: 20px;
-  top: 20px;
-  pointer-events: none;
-}
-
-#right-pane {
-  min-width: 320px;
-}
-
-#student-info p {
-  margin: 6px 0;
-}
-
-#message {
-  text-align: center;
-  margin: 16px 0 0;
-  font-size: 1.4rem;
-  font-weight: 600;
-}
-
-#message.ok {
-  color: #22c55e;
-}
-
-#message.ko {
-  color: #ef4444;
+header {
+    padding: 1rem 2rem;
+    background-color: var(--card-bg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #444;
 }
 
 button {
-  margin-top: 20px;
-  padding: 10px 16px;
-  border-radius: 999px;
-  border: none;
-  background: #2563eb;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
 }
 
-button:hover {
-  background: #1d4ed8;
+.container {
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem;
 }
+
+.camera-section, .info-section {
+    background-color: var(--card-bg);
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.video-container {
+    position: relative;
+    width: 640px;
+    height: 480px;
+    background: black;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.info-section {
+    width: 300px;
+    height: 480px;
+    display: flex;
+    flex-direction: column;
+}
+
+.card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.student-details img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 20px;
+    border: 3px solid var(--text-color);
+}
+
+.hidden { display: none; }
+
+.status-bar {
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+    background-color: #161621;
+}
+
+#status-message {
+    width: 100%;
+    padding: 20px;
+}
+
+.success { color: var(--success); background: rgba(0, 242, 195, 0.1); }
+.error { color: var(--danger); background: rgba(253, 93, 147, 0.1); }
+.neutral { color: var(--neutral); }
