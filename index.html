@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Système de Reconnaissance Faciale</title>
+    <title>Systeme de Reconnaissance Faciale</title>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/face-api.js/0.22.2/face-api.min.js"></script>
     <style>
         * {
@@ -273,24 +273,23 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Système de Contrôle d'Accès</h1>
-            <p>Reconnaissance Faciale Sécurisée</p>
+            <h1>Systeme de Controle d Acces</h1>
+            <p>Reconnaissance Faciale Securisee</p>
         </div>
 
         <div id="loadingMessage" class="loading">
-            Chargement des modèles de reconnaissance faciale...
+            Chargement des modeles de reconnaissance faciale...
         </div>
 
         <div id="mainContent" class="hidden">
             <div class="main-grid">
-                <!-- Zone caméra -->
                 <div class="card">
                     <div class="card-header">
                         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
-                        <h2>Caméra en Direct</h2>
+                        <h2>Camera en Direct</h2>
                     </div>
                     <div class="video-container">
                         <video id="video" autoplay playsinline width="640" height="480"></video>
@@ -299,7 +298,6 @@
                     <button id="analyzeBtn" class="analyze-btn">Analyser le Visage</button>
                 </div>
 
-                <!-- Zone informations -->
                 <div class="card">
                     <div class="card-header">
                         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -315,36 +313,34 @@
                                 </svg>
                             </div>
                             <p>En attente de reconnaissance</p>
-                            <small>Cliquez sur "Analyser le Visage"</small>
+                            <small>Cliquez sur Analyser le Visage</small>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Message de statut -->
             <div id="statusMessage" class="hidden"></div>
         </div>
     </div>
 
     <script>
-        let students = [];
-        let labeledDescriptors = [];
-        let isProcessing = false;
-        let stream = null;
-        let modelsLoaded = false;
+        var students = [];
+        var labeledDescriptors = [];
+        var isProcessing = false;
+        var stream = null;
+        var modelsLoaded = false;
 
-        const video = document.getElementById('video');
-        const overlay = document.getElementById('overlay');
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        const infoContent = document.getElementById('infoContent');
-        const statusMessage = document.getElementById('statusMessage');
-        const loadingMessage = document.getElementById('loadingMessage');
-        const mainContent = document.getElementById('mainContent');
+        var video = document.getElementById('video');
+        var overlay = document.getElementById('overlay');
+        var analyzeBtn = document.getElementById('analyzeBtn');
+        var infoContent = document.getElementById('infoContent');
+        var statusMessage = document.getElementById('statusMessage');
+        var loadingMessage = document.getElementById('loadingMessage');
+        var mainContent = document.getElementById('mainContent');
 
-        // Charger les modèles Face-API
         async function loadModels() {
             try {
-                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+                var MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
                 
                 await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
                 await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
@@ -359,32 +355,31 @@
             }
         }
 
-        // Charger les donnees JSON
         async function loadStudentData() {
             try {
-                const response = await fetch('./students.json');
+                var response = await fetch('./students.json');
                 students = await response.json();
-                console.log('Donnees chargees:', students.length, 'etudiants');
+                console.log('Donnees chargees: ' + students.length + ' etudiants');
             } catch (error) {
                 console.error('Erreur chargement JSON:', error);
                 showStatus('error', 'Erreur de chargement des donnees');
             }
         }
 
-        // Charger les descripteurs de visages de reference
         async function loadReferenceImages() {
             try {
-                const labeledDescriptorsArray = [];
+                var labeledDescriptorsArray = [];
 
-                for (const student of students) {
-                    const img = await faceapi.fetchImage('./assets/' + student.id + '.png');
-                    const detection = await faceapi
+                for (var i = 0; i < students.length; i++) {
+                    var student = students[i];
+                    var img = await faceapi.fetchImage('./assets/' + student.id + '.png');
+                    var detection = await faceapi
                         .detectSingleFace(img)
                         .withFaceLandmarks()
                         .withFaceDescriptor();
 
                     if (detection) {
-                        const descriptors = [detection.descriptor];
+                        var descriptors = [detection.descriptor];
                         labeledDescriptorsArray.push(
                             new faceapi.LabeledFaceDescriptors(student.id, descriptors)
                         );
@@ -401,7 +396,6 @@
             }
         }
 
-        // Demarrer la camera
         async function startCamera() {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({
@@ -414,7 +408,6 @@
             }
         }
 
-        // Capturer et reconnaître
         async function captureAndRecognize() {
             if (isProcessing || !modelsLoaded || labeledDescriptors.length === 0) return;
             
@@ -425,8 +418,7 @@
             showStatus('processing', 'Analyse en cours...');
 
             try {
-                // Détecter les visages dans la vidéo
-                const detections = await faceapi
+                var detections = await faceapi
                     .detectAllFaces(video)
                     .withFaceLandmarks()
                     .withFaceDescriptors();
@@ -440,26 +432,23 @@
                     return;
                 }
 
-                // Créer un matcher pour comparer les visages
-                const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+                var faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
 
-                // Dessiner les détections sur le canvas
-                const displaySize = { width: video.videoWidth, height: video.videoHeight };
+                var displaySize = { width: video.videoWidth, height: video.videoHeight };
                 faceapi.matchDimensions(overlay, displaySize);
 
-                const resizedDetections = faceapi.resizeResults(detections, displaySize);
+                var resizedDetections = faceapi.resizeResults(detections, displaySize);
                 overlay.getContext('2d').clearRect(0, 0, overlay.width, overlay.height);
 
-                // Comparer chaque visage détecté
-                let bestMatch = null;
-                let bestDistance = 1;
+                var bestMatch = null;
+                var bestDistance = 1;
 
-                resizedDetections.forEach(detection => {
-                    const match = faceMatcher.findBestMatch(detection.descriptor);
+                for (var i = 0; i < resizedDetections.length; i++) {
+                    var detection = resizedDetections[i];
+                    var match = faceMatcher.findBestMatch(detection.descriptor);
                     
-                    // Dessiner le rectangle autour du visage
-                    const box = detection.detection.box;
-                    const drawBox = new faceapi.draw.DrawBox(box, {
+                    var box = detection.detection.box;
+                    var drawBox = new faceapi.draw.DrawBox(box, {
                         label: match.label !== 'unknown' ? match.label : 'Inconnu',
                         boxColor: match.label !== 'unknown' ? '#22c55e' : '#ef4444'
                     });
@@ -469,23 +458,29 @@
                         bestDistance = match.distance;
                         bestMatch = match;
                     }
-                });
+                }
 
-                // Afficher les résultats
                 if (bestMatch && bestMatch.label !== 'unknown') {
-                    const student = students.find(s => s.id === bestMatch.label);
+                    var student = null;
+                    for (var j = 0; j < students.length; j++) {
+                        if (students[j].id === bestMatch.label) {
+                            student = students[j];
+                            break;
+                        }
+                    }
+                    
                     if (student) {
                         displayStudentInfo(student);
-                        showStatus('authorized', 'AUTORISÉ');
+                        showStatus('authorized', 'AUTORISE');
                         sendArduinoSignal(true);
-                        setTimeout(() => sendArduinoSignal(false), 3000);
+                        setTimeout(function() { sendArduinoSignal(false); }, 3000);
                     } else {
                         displayEmptyState();
-                        showStatus('unauthorized', 'VOUS N\'AVEZ PAS L\'HABILITATION SUFFISANTE');
+                        showStatus('unauthorized', 'VOUS N AVEZ PAS L HABILITATION SUFFISANTE');
                     }
                 } else {
                     displayEmptyState();
-                    showStatus('unauthorized', 'VOUS N\'AVEZ PAS L\'HABILITATION SUFFISANTE');
+                    showStatus('unauthorized', 'VOUS N AVEZ PAS L HABILITATION SUFFISANTE');
                 }
 
             } catch (error) {
@@ -498,19 +493,16 @@
             analyzeBtn.textContent = 'Analyser le Visage';
         }
 
-        // Afficher les informations de l'eleve
         function displayStudentInfo(student) {
             infoContent.innerHTML = '<div class="info-item"><div class="info-label">ID Eleve</div><div class="info-value large">' + student.id + '</div></div><div class="info-grid"><div class="info-item"><div class="info-label">Nom</div><div class="info-value">' + student.nom + '</div></div><div class="info-item"><div class="info-label">Prenom</div><div class="info-value">' + student.prenom + '</div></div></div><div class="info-item"><div class="info-label">Classe</div><div class="info-value">' + student.classe + '</div></div><div class="info-item"><div class="info-label">Email</div><div class="info-value">' + student.email + '</div></div><div class="info-item"><div class="info-label">Telephone</div><div class="info-value">' + student.telephone + '</div></div>';
         }
 
-        // Afficher l'etat vide
         function displayEmptyState() {
-            infoContent.innerHTML = '<div class="empty-state"><div class="empty-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg></div><p>En attente de reconnaissance</p><small>Cliquez sur "Analyser le Visage"</small></div>';
+            infoContent.innerHTML = '<div class="empty-state"><div class="empty-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg></div><p>En attente de reconnaissance</p><small>Cliquez sur Analyser le Visage</small></div>';
         }
 
-        // Afficher le statut
         function showStatus(type, message) {
-            const icons = {
+            var icons = {
                 authorized: '<svg class="status-icon" fill="none" stroke="#4ade80" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
                 unauthorized: '<svg class="status-icon" fill="none" stroke="#f87171" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
                 processing: '<svg class="status-icon" fill="none" stroke="#60a5fa" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
@@ -521,28 +513,15 @@
             statusMessage.classList.remove('hidden');
         }
 
-        // Communication Arduino
         async function sendArduinoSignal(activate) {
             try {
                 var activateText = activate ? 'HIGH' : 'LOW';
                 console.log('Signal Arduino broche 3: ' + activateText);
-                
-                // Pour communication reelle avec Arduino (Web Serial API)
-                /*
-                if (!window.port) {
-                    window.port = await navigator.serial.requestPort();
-                    await window.port.open({ baudRate: 9600 });
-                }
-                const writer = window.port.writable.getWriter();
-                await writer.write(new Uint8Array([activate ? 1 : 0]));
-                writer.releaseLock();
-                */
             } catch (error) {
                 console.error('Erreur Arduino:', error);
             }
         }
 
-        // Initialisation
         async function initialize() {
             await loadModels();
             await loadStudentData();
@@ -552,20 +531,17 @@
             loadingMessage.classList.add('hidden');
             mainContent.classList.remove('hidden');
             
-            console.log('Système initialisé et prêt');
+            console.log('Systeme initialise et pret');
         }
 
-        // Event listeners
         analyzeBtn.addEventListener('click', captureAndRecognize);
 
-        // Nettoyage à la fermeture
-        window.addEventListener('beforeunload', () => {
+        window.addEventListener('beforeunload', function() {
             if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+                stream.getTracks().forEach(function(track) { track.stop(); });
             }
         });
 
-        // Démarrer l'application
         window.addEventListener('DOMContentLoaded', initialize);
     </script>
 </body>
