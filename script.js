@@ -37,9 +37,9 @@ async function sendSignalToArduino() {
 
 // 2. Chargement des modèles et démarrage
 Promise.all([
-    faceapi.nets.ssdMobilenetv1.loadFromUri("Reco-eleves/models"),
-    faceapi.nets.faceLandmark68Net.loadFromUri("Reco-eleves/models"),
-    faceapi.nets.faceRecognitionNet.loadFromUri("Reco-eleves/models")
+    faceapi.nets.ssdMobilenetv1.loadFromUri("/Reco-eleves/models"),
+    faceapi.nets.faceLandmark68Net.loadFromUri("/Reco-eleves/models"),
+    faceapi.nets.faceRecognitionNet.loadFromUri("/Reco-eleves/models")
 ]).then(startVideo);
 
 async function startVideo() {
