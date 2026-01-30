@@ -338,77 +338,93 @@
         var loadingMessage = document.getElementById('loadingMessage');
         var mainContent = document.getElementById('mainContent');
 
-        async function loadModels() {
-            try {
-                var MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
-                
-                await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-                
-                console.log('Modeles charges avec succes');
-                modelsLoaded = true;
-            } catch (error) {
-                console.error('Erreur chargement modeles:', error);
-                loadingMessage.textContent = 'Erreur lors du chargement des modeles';
-                loadingMessage.style.color = '#f87171';
-            }
+        function loadModels() {
+            var MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+            
+            return faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL)
+                .then(function() {
+                    return faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                })
+                .then(function() {
+                    return faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                })
+                .then(function() {
+                    console.log('Modeles charges avec succes');
+                    modelsLoaded = true;
+                })
+                .catch(function(error) {
+                    console.error('Erreur chargement modeles:', error);
+                    loadingMessage.textContent = 'Erreur lors du chargement des modeles';
+                    loadingMessage.style.color = '#f87171';
+                });
         }
 
-        async function loadStudentData() {
-            try {
-                var response = await fetch('./students.json');
-                students = await response.json();
-                console.log('Donnees chargees: ' + students.length + ' etudiants');
-            } catch (error) {
-                console.error('Erreur chargement JSON:', error);
-                showStatus('error', 'Erreur de chargement des donnees');
-            }
+        function loadStudentData() {
+            return fetch('./students.json')
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    students = data;
+                    console.log('Donnees chargees: ' + students.length + ' etudiants');
+                })
+                .catch(function(error) {
+                    console.error('Erreur chargement JSON:', error);
+                    showStatus('error', 'Erreur de chargement des donnees');
+                });
         }
 
-        async function loadReferenceImages() {
-            try {
-                var labeledDescriptorsArray = [];
+        function loadReferenceImages() {
+            var labeledDescriptorsArray = [];
+            var promises = [];
 
-                for (var i = 0; i < students.length; i++) {
-                    var student = students[i];
-                    var img = await faceapi.fetchImage('./assets/' + student.id + '.png');
-                    var detection = await faceapi
-                        .detectSingleFace(img)
-                        .withFaceLandmarks()
-                        .withFaceDescriptor();
+            for (var i = 0; i < students.length; i++) {
+                (function(student) {
+                    var promise = faceapi.fetchImage('./assets/' + student.id + '.png')
+                        .then(function(img) {
+                            return faceapi.detectSingleFace(img)
+                                .withFaceLandmarks()
+                                .withFaceDescriptor();
+                        })
+                        .then(function(detection) {
+                            if (detection) {
+                                var descriptors = [detection.descriptor];
+                                labeledDescriptorsArray.push(
+                                    new faceapi.LabeledFaceDescriptors(student.id, descriptors)
+                                );
+                                console.log('Visage charge pour eleve ' + student.id);
+                            } else {
+                                console.warn('Aucun visage detecte pour eleve ' + student.id);
+                            }
+                        })
+                        .catch(function(error) {
+                            console.error('Erreur pour eleve ' + student.id + ':', error);
+                        });
+                    promises.push(promise);
+                })(students[i]);
+            }
 
-                    if (detection) {
-                        var descriptors = [detection.descriptor];
-                        labeledDescriptorsArray.push(
-                            new faceapi.LabeledFaceDescriptors(student.id, descriptors)
-                        );
-                        console.log('Visage charge pour eleve ' + student.id);
-                    } else {
-                        console.warn('Aucun visage detecte pour eleve ' + student.id);
-                    }
-                }
-
+            return Promise.all(promises).then(function() {
                 labeledDescriptors = labeledDescriptorsArray;
                 console.log(labeledDescriptors.length + ' visages de reference charges');
-            } catch (error) {
-                console.error('Erreur chargement images:', error);
-            }
+            });
         }
 
-        async function startCamera() {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: 640, height: 480 }
-                });
+        function startCamera() {
+            return navigator.mediaDevices.getUserMedia({
+                video: { width: 640, height: 480 }
+            })
+            .then(function(mediaStream) {
+                stream = mediaStream;
                 video.srcObject = stream;
-            } catch (error) {
+            })
+            .catch(function(error) {
                 console.error('Erreur camera:', error);
                 showStatus('error', 'Impossible d acces a la camera');
-            }
+            });
         }
 
-        async function captureAndRecognize() {
+        function captureAndRecognize() {
             if (isProcessing || !modelsLoaded || labeledDescriptors.length === 0) return;
             
             isProcessing = true;
@@ -417,80 +433,81 @@
             
             showStatus('processing', 'Analyse en cours...');
 
-            try {
-                var detections = await faceapi
-                    .detectAllFaces(video)
-                    .withFaceLandmarks()
-                    .withFaceDescriptors();
-
-                if (detections.length === 0) {
-                    displayEmptyState();
-                    showStatus('unauthorized', 'AUCUN VISAGE DETECTE');
-                    isProcessing = false;
-                    analyzeBtn.disabled = false;
-                    analyzeBtn.textContent = 'Analyser le Visage';
-                    return;
-                }
-
-                var faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
-
-                var displaySize = { width: video.videoWidth, height: video.videoHeight };
-                faceapi.matchDimensions(overlay, displaySize);
-
-                var resizedDetections = faceapi.resizeResults(detections, displaySize);
-                overlay.getContext('2d').clearRect(0, 0, overlay.width, overlay.height);
-
-                var bestMatch = null;
-                var bestDistance = 1;
-
-                for (var i = 0; i < resizedDetections.length; i++) {
-                    var detection = resizedDetections[i];
-                    var match = faceMatcher.findBestMatch(detection.descriptor);
-                    
-                    var box = detection.detection.box;
-                    var drawBox = new faceapi.draw.DrawBox(box, {
-                        label: match.label !== 'unknown' ? match.label : 'Inconnu',
-                        boxColor: match.label !== 'unknown' ? '#22c55e' : '#ef4444'
-                    });
-                    drawBox.draw(overlay);
-
-                    if (match.label !== 'unknown' && match.distance < bestDistance) {
-                        bestDistance = match.distance;
-                        bestMatch = match;
+            faceapi.detectAllFaces(video)
+                .withFaceLandmarks()
+                .withFaceDescriptors()
+                .then(function(detections) {
+                    if (detections.length === 0) {
+                        displayEmptyState();
+                        showStatus('unauthorized', 'AUCUN VISAGE DETECTE');
+                        isProcessing = false;
+                        analyzeBtn.disabled = false;
+                        analyzeBtn.textContent = 'Analyser le Visage';
+                        return;
                     }
-                }
 
-                if (bestMatch && bestMatch.label !== 'unknown') {
-                    var student = null;
-                    for (var j = 0; j < students.length; j++) {
-                        if (students[j].id === bestMatch.label) {
-                            student = students[j];
-                            break;
+                    var faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+
+                    var displaySize = { width: video.videoWidth, height: video.videoHeight };
+                    faceapi.matchDimensions(overlay, displaySize);
+
+                    var resizedDetections = faceapi.resizeResults(detections, displaySize);
+                    overlay.getContext('2d').clearRect(0, 0, overlay.width, overlay.height);
+
+                    var bestMatch = null;
+                    var bestDistance = 1;
+
+                    for (var i = 0; i < resizedDetections.length; i++) {
+                        var detection = resizedDetections[i];
+                        var match = faceMatcher.findBestMatch(detection.descriptor);
+                        
+                        var box = detection.detection.box;
+                        var drawBox = new faceapi.draw.DrawBox(box, {
+                            label: match.label !== 'unknown' ? match.label : 'Inconnu',
+                            boxColor: match.label !== 'unknown' ? '#22c55e' : '#ef4444'
+                        });
+                        drawBox.draw(overlay);
+
+                        if (match.label !== 'unknown' && match.distance < bestDistance) {
+                            bestDistance = match.distance;
+                            bestMatch = match;
                         }
                     }
-                    
-                    if (student) {
-                        displayStudentInfo(student);
-                        showStatus('authorized', 'AUTORISE');
-                        sendArduinoSignal(true);
-                        setTimeout(function() { sendArduinoSignal(false); }, 3000);
+
+                    if (bestMatch && bestMatch.label !== 'unknown') {
+                        var student = null;
+                        for (var j = 0; j < students.length; j++) {
+                            if (students[j].id === bestMatch.label) {
+                                student = students[j];
+                                break;
+                            }
+                        }
+                        
+                        if (student) {
+                            displayStudentInfo(student);
+                            showStatus('authorized', 'AUTORISE');
+                            sendArduinoSignal(true);
+                            setTimeout(function() { sendArduinoSignal(false); }, 3000);
+                        } else {
+                            displayEmptyState();
+                            showStatus('unauthorized', 'VOUS N AVEZ PAS L HABILITATION SUFFISANTE');
+                        }
                     } else {
                         displayEmptyState();
                         showStatus('unauthorized', 'VOUS N AVEZ PAS L HABILITATION SUFFISANTE');
                     }
-                } else {
-                    displayEmptyState();
-                    showStatus('unauthorized', 'VOUS N AVEZ PAS L HABILITATION SUFFISANTE');
-                }
 
-            } catch (error) {
-                console.error('Erreur reconnaissance:', error);
-                showStatus('error', 'Erreur lors de la reconnaissance');
-            }
-
-            isProcessing = false;
-            analyzeBtn.disabled = false;
-            analyzeBtn.textContent = 'Analyser le Visage';
+                    isProcessing = false;
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.textContent = 'Analyser le Visage';
+                })
+                .catch(function(error) {
+                    console.error('Erreur reconnaissance:', error);
+                    showStatus('error', 'Erreur lors de la reconnaissance');
+                    isProcessing = false;
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.textContent = 'Analyser le Visage';
+                });
         }
 
         function displayStudentInfo(student) {
@@ -513,25 +530,30 @@
             statusMessage.classList.remove('hidden');
         }
 
-        async function sendArduinoSignal(activate) {
-            try {
-                var activateText = activate ? 'HIGH' : 'LOW';
-                console.log('Signal Arduino broche 3: ' + activateText);
-            } catch (error) {
-                console.error('Erreur Arduino:', error);
-            }
+        function sendArduinoSignal(activate) {
+            var activateText = activate ? 'HIGH' : 'LOW';
+            console.log('Signal Arduino broche 3: ' + activateText);
         }
 
-        async function initialize() {
-            await loadModels();
-            await loadStudentData();
-            await loadReferenceImages();
-            await startCamera();
-            
-            loadingMessage.classList.add('hidden');
-            mainContent.classList.remove('hidden');
-            
-            console.log('Systeme initialise et pret');
+        function initialize() {
+            loadModels()
+                .then(function() {
+                    return loadStudentData();
+                })
+                .then(function() {
+                    return loadReferenceImages();
+                })
+                .then(function() {
+                    return startCamera();
+                })
+                .then(function() {
+                    loadingMessage.classList.add('hidden');
+                    mainContent.classList.remove('hidden');
+                    console.log('Systeme initialise et pret');
+                })
+                .catch(function(error) {
+                    console.error('Erreur initialisation:', error);
+                });
         }
 
         analyzeBtn.addEventListener('click', captureAndRecognize);
