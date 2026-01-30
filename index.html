@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrôle d'Accès Biométrique</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="face-api.min.js"></script>
+    <script defer src="script.js"></script>
+</head>
+<body>
+
+    <header>
+        <h1>Sécurité & Accès</h1>
+        <button id="connectArduino">🔌 Connecter Arduino</button>
+    </header>
+
+    <main class="container">
+        <div class="camera-section">
+            <h2>Flux Vidéo</h2>
+            <div class="video-container">
+                <video id="video" width="640" height="480" autoplay muted></video>
+                </div>
+        </div>
+
+        <div class="info-section">
+            <h2>Identité Détectée</h2>
+            <div id="student-card" class="card">
+                <div class="placeholder-text">En attente de détection...</div>
+                <div class="student-details hidden">
+                    <img id="display-photo" src="" alt="Photo élève">
+                    <p><strong>ID :</strong> <span id="display-id"></span></p>
+                    <p><strong>Nom :</strong> <span id="display-nom"></span></p>
+                    <p><strong>Prénom :</strong> <span id="display-prenom"></span></p>
+                    <p><strong>Classe :</strong> <span id="display-classe"></span></p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="status-bar">
+        <div id="status-message" class="neutral">INITIALISATION DU SYSTÈME...</div>
+    </footer>
+
+</body>
+</html>
